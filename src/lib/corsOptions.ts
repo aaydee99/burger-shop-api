@@ -60,12 +60,25 @@ function isRenderDeploymentOrigin(origin: string): boolean {
   }
 }
 
+/** Unsplash image CDN (`images.unsplash.com` and other `*.unsplash.com` hosts). */
+function isUnsplashImageCdnOrigin(origin: string): boolean {
+  try {
+    const { hostname } = new URL(origin);
+    return hostname === "images.unsplash.com" || hostname.endsWith(".unsplash.com");
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Builds `cors` middleware options:
  * - Reflects allowed `Origin` (required with `credentials: true`).
  * - Merges `CORS_ORIGIN`, `CORS_ORIGINS`, and `FRONTEND_URL` (comma-separated where applicable).
  * - Optional `*.vercel.app` (on by default; set `CORS_ALLOW_VERCEL_PREVIEWS=0` to disable).
  * - Optional `*.onrender.com` (on by default; set `CORS_ALLOW_RENDER_HOSTS=0` to disable).
+ * - Optional Unsplash CDN (`https://images.unsplash.com`, other `*.unsplash.com`) for `Origin` on
+ *   requests to this API (e.g. proxies or non-typical clients). Normal `<img src="https://images.unsplash.com/...">`
+ *   loads from Unsplash directly; that traffic never hits this API and uses Unsplash’s own CORS rules.
  * - Allows `http://localhost:*` / `127.0.0.1:*` / `[::1]:*` (any port) for local dev against a remote API.
  * - Preflight: explicit methods/headers and cache via `maxAge`.
  */
@@ -76,6 +89,8 @@ export function buildCorsOptions(): CorsOptions {
     process.env.CORS_ALLOW_VERCEL_PREVIEWS !== "false";
   const allowRenderHosts =
     process.env.CORS_ALLOW_RENDER_HOSTS !== "0" && process.env.CORS_ALLOW_RENDER_HOSTS !== "false";
+  const allowUnsplashCdn =
+    process.env.CORS_ALLOW_UNSPLASH_CDN !== "0" && process.env.CORS_ALLOW_UNSPLASH_CDN !== "false";
   const isProd = process.env.NODE_ENV === "production";
   const corsDebug = process.env.CORS_DEBUG === "1" || process.env.CORS_DEBUG === "true";
 
@@ -105,6 +120,11 @@ export function buildCorsOptions(): CorsOptions {
       }
 
       if (allowRenderHosts && isRenderDeploymentOrigin(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      if (allowUnsplashCdn && isUnsplashImageCdnOrigin(origin)) {
         callback(null, true);
         return;
       }
