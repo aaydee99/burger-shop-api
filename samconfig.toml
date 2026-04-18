@@ -1,0 +1,28 @@
+# Deploy with the AWS account ROOT user's programmatic access keys (not an IAM user):
+#   1) Sign in to the AWS console as root.
+#   2) Account name (top right) -> Security credentials -> Access keys -> Create access key.
+#   3) Run:  aws configure
+#      AWS Access Key ID:     (root key id)
+#      AWS Secret Access Key: (root secret)
+#      Default region:        e.g. us-east-1
+#      Default output:        json
+#   4) Unset any profile so the default credentials file is used:  unset AWS_PROFILE
+#
+# CAPABILITY_IAM below only lets CloudFormation create the Lambda *execution role* AWS
+# requires for the function - it does not mean "sign in as an IAM user".
+
+version = 0.1
+
+[default.global.parameters]
+stack_name = "burger-shop-api-proxy"
+region = "us-east-1"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = false
+resolve_s3 = true
+parameter_overrides = "ApiUpstream=https://apishop.online ProxyClientIp=203.0.113.1 CorsAllowOrigin=*"
