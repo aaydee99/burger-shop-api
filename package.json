@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/app.ts",
     "build": "tsc",
+    "build:lambda": "esbuild lambda/proxy-handler.ts --bundle --platform=node --target=node20 --format=cjs --outfile=lambda-dist/handler.js",
+    "deploy:lambda": "npm run build:lambda && sam deploy",
     "start": "node dist/app.js",
     "typecheck": "tsc --noEmit"
   },
@@ -17,10 +19,12 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@types/aws-lambda": "^8.10.147",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.10.2",
+    "esbuild": "^0.25.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   },

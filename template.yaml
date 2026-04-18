@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: HTTP proxy — browser → Lambda Function URL → API_UPSTREAM (real burger-shop API).
+
+Parameters:
+  ApiUpstream:
+    Type: String
+    Description: Real API origin (e.g. https://apishop.online).
+  ProxyClientIp:
+    Type: String
+    Default: "203.0.113.1"
+    Description: Sent to upstream as X-Forwarded-For / X-Real-IP.
+  CorsAllowOrigin:
+    Type: String
+    Default: "*"
+    Description: Access-Control-Allow-Origin for browser calls.
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 256
+
+Resources:
+  ApiProxyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs20.x
+      Architectures:
+        - arm64
+      Handler: handler.handler
+      CodeUri: lambda-dist/
+      Environment:
+        Variables:
+          API_UPSTREAM: !Ref ApiUpstream
+          PROXY_CLIENT_IP: !Ref ProxyClientIp
+          CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
+      FunctionUrlConfig:
+        AuthType: NONE
+        Cors:
+          AllowCredentials: false
+          AllowHeaders:
+            - "*"
+          AllowMethods:
+            - "*"
+          AllowOrigins:
+            - "*"
+
+Outputs:
+  FunctionUrl:
+    Description: Paste into frontend VITE_API_URL (no trailing slash).
+    Value: !GetAtt ApiProxyFunctionUrl.FunctionUrl
