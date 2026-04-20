@@ -1,11 +1,14 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: HTTP proxy — browser → Lambda Function URL → API_UPSTREAM (real burger-shop API).
+Description: HTTP proxy — browser (or Cloudflare) → Lambda Function URL → API_UPSTREAM (real API origin).
 
 Parameters:
   ApiUpstream:
     Type: String
-    Description: Real API origin (e.g. https://apishop.online).
+    Description: >
+      Direct origin of the Express/API app (e.g. Render https://*.onrender.com).
+      Do NOT set this to the same apishop.online hostname you point at this Lambda in Cloudflare,
+      or the proxy will call itself in a loop. Use DNS-only / grey-cloud origin URL, or a separate origin label.
   ProxyClientIp:
     Type: String
     Default: "203.0.113.1"
@@ -13,7 +16,7 @@ Parameters:
   CorsAllowOrigin:
     Type: String
     Default: "*"
-    Description: Access-Control-Allow-Origin for browser calls.
+    Description: Reserved for future use; CORS is handled in Lambda (reflects Origin or *).
 
 Globals:
   Function:
@@ -34,6 +37,7 @@ Resources:
           API_UPSTREAM: !Ref ApiUpstream
           PROXY_CLIENT_IP: !Ref ProxyClientIp
           CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
+      # Platform CORS + handler CORS (same values) so OPTIONS works even if the runtime short-circuits.
       FunctionUrlConfig:
         AuthType: NONE
         Cors:

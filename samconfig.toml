@@ -25,4 +25,5 @@ parallel = true
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = false
 resolve_s3 = true
+# If apishop.online (orange cloud) points at this Lambda, ApiUpstream must be your real API host (e.g. Render URL), not apishop.online.
 parameter_overrides = "ApiUpstream=https://apishop.online ProxyClientIp=203.0.113.1 CorsAllowOrigin=*"
